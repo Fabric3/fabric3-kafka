@@ -1,0 +1,4 @@
+rootProject.name = 'fabric3-kafka'
+
+include 'fabric3-binding-kafka'
+
