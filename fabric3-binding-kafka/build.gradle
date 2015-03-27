@@ -4,6 +4,7 @@ dependencies {
 
     providedCompile group: fabric3Group, name: 'fabric3-spi', version: fabric3Version
 
+    compile group: 'org.apache.kafka', name: 'kafka_2.11', version: kafkaVersion
 }
 
 
