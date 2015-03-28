@@ -16,7 +16,9 @@
  */
 package org.fabric3.binding.kafka.introspection;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.producer.Producer;
+import org.fabric3.api.binding.kafka.model.KafkaBinding;
 import org.fabric3.api.model.type.component.Channel;
 import org.fabric3.spi.introspection.dsl.ChannelIntrospector;
 
@@ -25,6 +27,11 @@ import org.fabric3.spi.introspection.dsl.ChannelIntrospector;
  */
 public class KafkaIntrospector implements ChannelIntrospector {
     public void introspect(Channel channel) {
-        channel.setConnectionType(KafkaProducer.class);
+        channel.getBindings().forEach(b -> {
+            if (b instanceof KafkaBinding) {
+                b.setConnectionTypes(Consumer.class, Producer.class);
+            }
+        });
+
     }
 }
