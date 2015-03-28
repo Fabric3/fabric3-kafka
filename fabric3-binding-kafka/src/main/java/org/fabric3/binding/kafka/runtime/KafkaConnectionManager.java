@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
 import org.fabric3.binding.kafka.provision.KafkaConnectionTarget;
+import org.fabric3.spi.container.channel.ChannelConnection;
 
 /**
  *
@@ -20,4 +21,5 @@ public interface KafkaConnectionManager {
 
     void releaseConsumer(URI channelUri);
 
+    void subscribe(KafkaConnectionSource source, ChannelConnection connection);
 }
