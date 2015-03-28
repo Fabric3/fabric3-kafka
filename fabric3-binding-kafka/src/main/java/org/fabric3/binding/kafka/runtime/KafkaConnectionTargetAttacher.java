@@ -26,6 +26,6 @@ public class KafkaConnectionTargetAttacher implements TargetConnectionAttacher<K
     }
 
     public void detach(PhysicalConnectionSource source, KafkaConnectionTarget target) {
-        connectionManager.release(target.getChannelUri());
+        connectionManager.releaseProducer(target.getChannelUri());
     }
 }

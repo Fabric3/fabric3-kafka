@@ -30,10 +30,6 @@ public class KafkaBindingBuilder extends AbstractBuilder {
         return new KafkaBinding();
     }
 
-    public KafkaBindingBuilder() {
-        this("file.binding");
-    }
-
     public KafkaBindingBuilder(String name) {
         this.binding = new KafkaBinding();
     }
@@ -60,6 +56,10 @@ public class KafkaBindingBuilder extends AbstractBuilder {
         checkState();
         freeze();
         return binding;
+    }
+
+    private KafkaBindingBuilder() {
+        this("kafka.binding");
     }
 
 }
