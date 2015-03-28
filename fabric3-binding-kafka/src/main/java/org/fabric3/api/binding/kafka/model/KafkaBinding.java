@@ -30,13 +30,22 @@ import org.fabric3.api.model.type.component.Binding;
  */
 public class KafkaBinding extends Binding {
     private Map<String, Object> configuration = new HashMap<>();
+    private String defaultTopic;
 
     public KafkaBinding() {
         super("kafka", null, "binding.kafka");
     }
 
+    public String getDefaultTopic() {
+        return defaultTopic;
+    }
+
     public Map<String, Object> getConfiguration() {
         return configuration;
+    }
+
+    void setDefaultTopic(String topic) {
+        defaultTopic = topic;
     }
 
     void addConfig(String key, String value) {

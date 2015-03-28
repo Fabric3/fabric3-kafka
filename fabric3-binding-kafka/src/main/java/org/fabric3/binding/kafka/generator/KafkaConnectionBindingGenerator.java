@@ -19,16 +19,13 @@ import org.oasisopen.sca.annotation.EagerInit;
 @EagerInit
 @Key("org.fabric3.api.binding.kafka.model.KafkaBinding")
 public class KafkaConnectionBindingGenerator implements ConnectionBindingGenerator<KafkaBinding> {
-    public PhysicalConnectionSource generateConnectionSource(LogicalConsumer logicalConsumer,
-                                                             LogicalBinding<KafkaBinding> logicalBinding,
-                                                             DeliveryType deliveryType) {
-        return new KafkaConnectionSource();
+    public PhysicalConnectionSource generateConnectionSource(LogicalConsumer consumer, LogicalBinding<KafkaBinding> binding, DeliveryType deliveryType) {
+        return new KafkaConnectionSource(binding.getParent().getUri(), binding.getDefinition().getConfiguration());
 
     }
 
-    public PhysicalConnectionTarget generateConnectionTarget(LogicalProducer logicalProducer,
-                                                             LogicalBinding<KafkaBinding> logicalBinding,
-                                                             DeliveryType deliveryType) {
-        return new KafkaConnectionTarget();
+    public PhysicalConnectionTarget generateConnectionTarget(LogicalProducer producer, LogicalBinding<KafkaBinding> binding, DeliveryType deliveryType) {
+        KafkaBinding kafkaBinding = binding.getDefinition();
+        return new KafkaConnectionTarget(binding.getParent().getUri(), kafkaBinding.getDefaultTopic(), kafkaBinding.getConfiguration());
     }
 }

@@ -44,6 +44,12 @@ public class KafkaBindingBuilder extends AbstractBuilder {
         return this;
     }
 
+    public KafkaBindingBuilder defaultTopic(String topic) {
+        checkState();
+        binding.setDefaultTopic(topic);
+        return this;
+    }
+
     public KafkaBindingBuilder configuration(String key, String value) {
         checkState();
         binding.addConfig(key, value);
