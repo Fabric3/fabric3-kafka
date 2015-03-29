@@ -21,7 +21,7 @@ import java.net.URI;
 import org.fabric3.api.model.type.builder.AbstractBuilder;
 
 /**
- * Builder for the File binding.
+ * Builder for the Kafka binding.
  */
 public class KafkaBindingBuilder extends AbstractBuilder {
     private KafkaBinding binding;
