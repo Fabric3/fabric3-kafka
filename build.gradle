@@ -38,7 +38,7 @@ if (ext.build == 'local') {
 } else if (ext.build == 'deploy') {
     defaultTasks 'clean', 'test', 'jar', 'fabric3Contribution', 'assemble', 'install', 'uploadArchives'
 } else {
-    defaultTasks 'clean', 'test', 'jar', 'fabric3Contribution', 'assemble', 'install'
+    defaultTasks 'clean', 'test', 'jar', 'fabric3Contribution', 'assemble', 'install', 'fabric3Test'
 }
 
 if (!hasProperty('sonatypeUsername')) {
@@ -103,6 +103,8 @@ configure(deployProjects()) {
         }
         dependencies {
             classpath group: 'org.fabric3.gradle', name: 'fabric3-contribution', version: pluginVersion
+//            classpath group: 'org.fabric3.gradle', name: 'fabric3-test', version: pluginVersion
+
         }
 
     }

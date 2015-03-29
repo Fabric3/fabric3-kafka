@@ -1,4 +1,4 @@
 rootProject.name = 'fabric3-kafka'
 
-include 'fabric3-binding-kafka'
+include 'fabric3-binding-kafka', 'test-kafka'
 

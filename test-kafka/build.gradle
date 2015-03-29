@@ -1,0 +1,32 @@
+apply plugin: 'fabric3-test'
+
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+    }
+
+    dependencies {
+        classpath group: 'org.fabric3.gradle', name: 'fabric3-test', version: pluginVersion
+    }
+
+}
+
+dependencies {
+
+    compile group: fabric3Group, name: 'fabric3-junit-api', version: fabric3Version
+
+}
+
+fabric3Test {
+
+    remoteSnapshotRepositoryEnabled true;
+
+
+    extension group: fabric3Group, name: 'fabric3-binding-kafka', version: version
+
+}
+
