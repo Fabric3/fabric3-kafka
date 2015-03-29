@@ -26,8 +26,8 @@ import org.fabric3.api.model.type.builder.AbstractBuilder;
 public class KafkaBindingBuilder extends AbstractBuilder {
     private KafkaBinding binding;
 
-    public static KafkaBinding newBuilder() {
-        return new KafkaBinding();
+    public static KafkaBindingBuilder newBuilder() {
+        return new KafkaBindingBuilder();
     }
 
     public KafkaBindingBuilder(String name) {
