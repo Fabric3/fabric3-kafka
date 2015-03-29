@@ -107,7 +107,8 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
 
     public void subscribe(KafkaConnectionSource source, ChannelConnection connection) {
         Consumer consumer = getConsumer(source);
-        consumer.subscribe(source.getDefaultTopic());
+        String topic = source.getTopic() != null ? source.getTopic() : source.getDefaultTopic();
+        consumer.subscribe(topic);
 
         EventStream stream = connection.getEventStream();
 
