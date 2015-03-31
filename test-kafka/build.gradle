@@ -16,7 +16,8 @@ buildscript {
 }
 
 dependencies {
-
+    compile project(':fabric3-binding-kafka')
+    compile group: fabric3Group, name: 'fabric3-model-api', version: fabric3Version
     compile group: fabric3Group, name: 'fabric3-junit-api', version: fabric3Version
 
 }
@@ -25,6 +26,8 @@ fabric3Test {
 
     remoteSnapshotRepositoryEnabled true;
 
+    shared group: 'org.apache.kafka', name: 'kafka-clients', version: kafkaVersion
+    shared group: 'org.apache.kafka', name: 'kafka_2.10', version: kafkaVersion
 
     extension group: fabric3Group, name: 'fabric3-binding-kafka', version: version
 

@@ -1,5 +1,7 @@
 package org.fabric3.binding.kafka.generator;
 
+import java.net.URI;
+
 import org.fabric3.api.annotation.wire.Key;
 import org.fabric3.api.binding.kafka.model.KafkaBinding;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
@@ -21,7 +23,9 @@ import org.oasisopen.sca.annotation.EagerInit;
 public class KafkaConnectionBindingGenerator implements ConnectionBindingGenerator<KafkaBinding> {
     public PhysicalConnectionSource generateConnectionSource(LogicalConsumer consumer, LogicalBinding<KafkaBinding> binding, DeliveryType deliveryType) {
         KafkaBinding kafkaBinding = binding.getDefinition();
-        return new KafkaConnectionSource(binding.getParent().getUri(), kafkaBinding.getDefaultTopic(), kafkaBinding.getConfiguration());
+        URI channelUri = binding.getParent().getUri();
+        URI consumerUri = consumer.getUri();
+        return new KafkaConnectionSource(channelUri, consumerUri, kafkaBinding.getDefaultTopic(), kafkaBinding.getConfiguration());
 
     }
 

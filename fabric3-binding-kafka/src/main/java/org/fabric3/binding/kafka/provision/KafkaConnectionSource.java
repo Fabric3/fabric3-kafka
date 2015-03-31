@@ -10,18 +10,24 @@ import org.fabric3.spi.model.physical.PhysicalConnectionSource;
  */
 public class KafkaConnectionSource extends PhysicalConnectionSource {
     private URI channelUri;
+    private URI consumerUri;
     private String defaultTopic;
 
     private Map<String, Object> configuration;
 
-    public KafkaConnectionSource(URI channelUri, String defaultTopic, Map<String, Object> configuration) {
+    public KafkaConnectionSource(URI channelUri, URI consumerUri, String defaultTopic, Map<String, Object> configuration) {
         this.channelUri = channelUri;
+        this.consumerUri = consumerUri;
         this.defaultTopic = defaultTopic;
         this.configuration = configuration;
     }
 
     public URI getChannelUri() {
         return channelUri;
+    }
+
+    public URI getConsumerUri() {
+        return consumerUri;
     }
 
     public String getDefaultTopic() {

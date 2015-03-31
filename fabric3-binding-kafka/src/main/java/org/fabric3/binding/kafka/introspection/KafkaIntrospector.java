@@ -16,20 +16,24 @@
  */
 package org.fabric3.binding.kafka.introspection;
 
-import org.apache.kafka.clients.consumer.Consumer;
+import kafka.javaapi.consumer.ConsumerConnector;
 import org.apache.kafka.clients.producer.Producer;
 import org.fabric3.api.binding.kafka.model.KafkaBinding;
 import org.fabric3.api.model.type.component.Channel;
 import org.fabric3.spi.introspection.dsl.ChannelIntrospector;
+import org.oasisopen.sca.annotation.EagerInit;
 
 /**
+ * Adds connection types to Kafka binding configuration.
  *
+ * Adding the types as opposed to referencing them directly in {@link KafkaBinding} avoids requiring user code to have a dependency on Kafka libraries.
  */
+@EagerInit
 public class KafkaIntrospector implements ChannelIntrospector {
     public void introspect(Channel channel) {
         channel.getBindings().forEach(b -> {
             if (b instanceof KafkaBinding) {
-                b.setConnectionTypes(Consumer.class, Producer.class);
+                b.setConnectionTypes(Producer.class, ConsumerConnector.class);
             }
         });
 

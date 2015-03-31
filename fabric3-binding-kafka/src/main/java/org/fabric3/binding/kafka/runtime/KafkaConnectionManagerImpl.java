@@ -2,13 +2,19 @@ package org.fabric3.binding.kafka.runtime;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import kafka.consumer.ConsumerConfig;
+import kafka.consumer.ConsumerIterator;
+import kafka.javaapi.consumer.ConsumerConnector;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -17,6 +23,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.fabric3.api.MonitorChannel;
 import org.fabric3.api.annotation.monitor.Monitor;
+import org.fabric3.api.host.Fabric3Exception;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
 import org.fabric3.binding.kafka.provision.KafkaConnectionTarget;
 import org.fabric3.spi.container.builder.component.DirectConnectionFactory;
@@ -36,8 +43,10 @@ import org.oasisopen.sca.annotation.Service;
 @EagerInit
 @Service({KafkaConnectionManager.class, DirectConnectionFactory.class})
 public class KafkaConnectionManagerImpl implements KafkaConnectionManager, DirectConnectionFactory {
+    private static final List<Class<?>> TYPES = Arrays.asList(Producer.class, Consumer.class, ConsumerConnector.class);
+
     private Map<URI, Holder<Producer>> producers = new HashMap<>();
-    private Map<URI, Holder<Consumer>> consumers = new HashMap<>();
+    private Map<URI, Map<URI, ConsumerConnector>> connectors = new HashMap<>();
 
     private AtomicBoolean active = new AtomicBoolean();
 
@@ -67,9 +76,13 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
         for (Holder<Producer> holder : producers.values()) {
             holder.delegate.close();
         }
-        for (Holder<Consumer> holder : consumers.values()) {
-            holder.delegate.close();
+        for (Map<URI, ConsumerConnector> holder : connectors.values()) {
+            holder.values().forEach(ConsumerConnector::shutdown);
         }
+    }
+
+    public List<Class<?>> getTypes() {
+        return TYPES;
     }
 
     public Producer<?, ?> getProducer(KafkaConnectionTarget target) {
@@ -77,50 +90,53 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
     }
 
     public void releaseProducer(URI channelUri) {
-        Holder<Producer> holder = producers.get(channelUri);
-        if (--holder.counter == 0) {
-            holder.delegate.close();
-            producers.remove(channelUri);
+        doRelease(channelUri, true);
+    }
+
+    public <T> T createDirectConsumer(Class<T> type, KafkaConnectionSource source) {
+        if (ConsumerConnector.class.isAssignableFrom(type)) {
+            Map<URI, ConsumerConnector> map = connectors.computeIfAbsent(source.getChannelUri(), (s) -> new HashMap());
+            return type.cast(map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumerConnector(source)));
+        } else {
+            throw new Fabric3Exception("Invalid consumer type: " + type.getName());
         }
     }
 
-    public Consumer<?, ?> getConsumer(KafkaConnectionSource source) {
-        return consumers.computeIfAbsent(source.getChannelUri(), (s) -> createConsumer(source)).delegate;
-    }
-
-    public void releaseConsumer(URI channelUri) {
-        Holder<Consumer> holder = consumers.get(channelUri);
-        if (--holder.counter == 0) {
-            holder.delegate.close();
-            producers.remove(channelUri);
-        }
+    public void releaseConsumer(KafkaConnectionSource source) {
+        URI channelUri = source.getChannelUri();
+        URI consumerUri = source.getConsumerUri();
+        doRelease(channelUri, consumerUri, true);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Supplier<T> getConnection(URI uri, Class<T> type) {
+    public <T> Supplier<T> getConnection(URI channelUri, URI attachUri, Class<T> type) {
+        // use the release
         if (Producer.class.isAssignableFrom(type)) {
-            return () -> (T) producers.get(uri).delegate;
+            return () -> (T) doRelease(channelUri, false);
+        } else if (ConsumerConnector.class.isAssignableFrom(type)) {
+            return () -> (T) doRelease(channelUri, attachUri, false);
         } else {
-            return () -> (T) consumers.get(uri).delegate;
+            throw new Fabric3Exception("Invalid connection type: " + type.getName());
         }
     }
 
     public void subscribe(KafkaConnectionSource source, ChannelConnection connection) {
-        Consumer consumer = getConsumer(source);
         String topic = source.getTopic() != null ? source.getTopic() : source.getDefaultTopic();
-        consumer.subscribe(topic);
+        Map<URI, ConsumerConnector> map = connectors.computeIfAbsent(source.getChannelUri(), (s) -> new HashMap());
+        ConsumerConnector consumer = map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumerConnector(source));
 
-        EventStream stream = connection.getEventStream();
-
-        if (active.get()) {
-            executorService.submit(poller(consumer, stream));
-        } else {
-            queuedSubscriptions.add(poller(consumer, stream));
-        }
+        ConsumerIterator iterator = consumer.createMessageStreams(Collections.singletonMap(topic, 1)).get(topic).get(0).iterator();
+        executorService.submit(() -> {
+            while (iterator.hasNext()) {
+                connection.getEventStream().getHeadHandler().handle(String.valueOf(iterator.next()), false);
+            }
+        });
+        // set the closeable callback
+        connection.getEventStream().setCloseable(() -> releaseConsumer(source));
     }
 
-    public <T> Supplier<T> getConnection(URI uri, Class<T> type, String topic) {
-        return getConnection(uri, type);
+    public <T> Supplier<T> getConnection(URI uri, URI attachUri, Class<T> type, String topic) {
+        return getConnection(uri, attachUri, type);
     }
 
     @SuppressWarnings("unchecked")
@@ -131,6 +147,14 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
     @SuppressWarnings("unchecked")
     private Holder<Consumer> createConsumer(KafkaConnectionSource source) {
         return new Holder(new KafkaConsumer<>(source.getConfiguration()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConsumerConnector createConsumerConnector(KafkaConnectionSource source) {
+        Properties properties = new Properties();
+        properties.putAll(source.getConfiguration());
+        ConsumerConfig config = new ConsumerConfig(properties);
+        return kafka.consumer.Consumer.createJavaConsumerConnector(config);
     }
 
     @SuppressWarnings("unchecked")
@@ -150,6 +174,36 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
                 }
             }
         };
+    }
+
+    private ConsumerConnector doRelease(URI channelUri, URI consumerUri, boolean shutdown) {
+        Map<URI, ConsumerConnector> connectorMap = connectors.get(channelUri);
+        if (connectorMap == null) {
+            return null;
+        }
+        ConsumerConnector connector = connectorMap.get(consumerUri);
+        if (connector == null) {
+            return null;
+        }
+        if (shutdown) {
+            connector.shutdown();
+        }
+        connectors.remove(channelUri);
+        return connector;
+    }
+
+    private Producer<?, ?> doRelease(URI channelUri, boolean shutdown) {
+        Holder<Producer> holder = producers.get(channelUri);
+        if (holder == null) {
+            return null;
+        }
+        if (--holder.counter == 0) {
+            if (shutdown) {
+                holder.delegate.close();
+            }
+            producers.remove(channelUri);
+        }
+        return holder.delegate;
     }
 
     private class Holder<T> {

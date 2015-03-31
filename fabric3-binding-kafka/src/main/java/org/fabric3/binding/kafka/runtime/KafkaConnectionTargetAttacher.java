@@ -20,9 +20,10 @@ public class KafkaConnectionTargetAttacher implements TargetConnectionAttacher<K
     @SuppressWarnings("unchecked")
     public void attach(PhysicalConnectionSource source, KafkaConnectionTarget target, ChannelConnection connection) {
         Producer producer = connectionManager.getProducer(target);
-        if (!target.isDirectConnection()) {
+        if (!source.isDirectConnection()) {
             String topic = target.getTopic() != null ? target.getTopic(): target.getDefaultTopic();
             connection.getEventStream().addHandler((event, batch) -> producer.send(new ProducerRecord(topic, event)));
+            connection.getEventStream().setCloseable(()->connectionManager.releaseProducer(target.getChannelUri()));
         }
     }
 
