@@ -12,13 +12,22 @@ public class KafkaConnectionSource extends PhysicalConnectionSource {
     private URI channelUri;
     private URI consumerUri;
     private String defaultTopic;
+    private String keyDeserializer;
+    private final String valueDeserializer;
 
     private Map<String, Object> configuration;
 
-    public KafkaConnectionSource(URI channelUri, URI consumerUri, String defaultTopic, Map<String, Object> configuration) {
+    public KafkaConnectionSource(URI channelUri,
+                                 URI consumerUri,
+                                 String defaultTopic,
+                                 String keyDeserializer,
+                                 String valueDeserializer,
+                                 Map<String, Object> configuration) {
         this.channelUri = channelUri;
         this.consumerUri = consumerUri;
         this.defaultTopic = defaultTopic;
+        this.keyDeserializer = keyDeserializer;
+        this.valueDeserializer = valueDeserializer;
         this.configuration = configuration;
     }
 
@@ -32,6 +41,14 @@ public class KafkaConnectionSource extends PhysicalConnectionSource {
 
     public String getDefaultTopic() {
         return defaultTopic;
+    }
+
+    public String getKeyDeserializer() {
+        return keyDeserializer;
+    }
+
+    public String getValueDeserializer() {
+        return valueDeserializer;
     }
 
     public Map<String, Object> getConfiguration() {

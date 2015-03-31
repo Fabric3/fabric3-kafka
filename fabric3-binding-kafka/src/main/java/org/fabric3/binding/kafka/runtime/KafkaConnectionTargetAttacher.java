@@ -14,6 +14,7 @@ import org.oasisopen.sca.annotation.Reference;
  */
 @Key("org.fabric3.binding.kafka.provision.KafkaConnectionTarget")
 public class KafkaConnectionTargetAttacher implements TargetConnectionAttacher<KafkaConnectionTarget> {
+
     @Reference
     protected KafkaConnectionManager connectionManager;
 

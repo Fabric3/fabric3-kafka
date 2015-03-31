@@ -31,6 +31,10 @@ import org.fabric3.api.model.type.component.Binding;
 public class KafkaBinding extends Binding {
     private Map<String, Object> configuration = new HashMap<>();
     private String defaultTopic;
+    private String keyDeserializer;
+    private String valueDeserializer;
+    private String keySerializer;
+    private String valueSerializer;
 
     public KafkaBinding() {
         super("kafka", null, "binding.kafka");
@@ -44,6 +48,22 @@ public class KafkaBinding extends Binding {
         return configuration;
     }
 
+    public String getKeyDeserializer() {
+        return keyDeserializer;
+    }
+
+    public String getValueDeserializer() {
+        return valueDeserializer;
+    }
+
+    public String getKeySerializer() {
+        return keySerializer;
+    }
+
+    public String getValueSerializer() {
+        return valueSerializer;
+    }
+
     void setDefaultTopic(String topic) {
         defaultTopic = topic;
     }
@@ -54,5 +74,21 @@ public class KafkaBinding extends Binding {
 
     void setTarget(URI uri) {
         targetUri = uri;
+    }
+
+    public void setKeyDeserializer(String keyDeserializer) {
+        this.keyDeserializer = keyDeserializer;
+    }
+
+    void setValueDeserializer(String name) {
+        valueDeserializer = name;
+    }
+
+    public void setKeySerializer(String keySerializer) {
+        this.keySerializer = keySerializer;
+    }
+
+    public void setValueSerializer(String valueSerializer) {
+        this.valueSerializer = valueSerializer;
     }
 }

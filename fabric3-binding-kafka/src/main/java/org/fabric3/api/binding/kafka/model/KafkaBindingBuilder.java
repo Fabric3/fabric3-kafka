@@ -52,6 +52,30 @@ public class KafkaBindingBuilder extends AbstractBuilder {
         return this;
     }
 
+    public KafkaBindingBuilder keyDeserializer(String name) {
+        checkState();
+        binding.setKeyDeserializer(name);
+        return this;
+    }
+
+    public KafkaBindingBuilder valueDeserializer(String name) {
+        checkState();
+        binding.setValueDeserializer(name);
+        return this;
+    }
+
+    public KafkaBindingBuilder keySerializer(String name) {
+        checkState();
+        binding.setKeySerializer(name);
+        return this;
+    }
+
+    public KafkaBindingBuilder valueSerializer(String name) {
+        checkState();
+        binding.setValueSerializer(name);
+        return this;
+    }
+
     public KafkaBinding build() {
         checkState();
         freeze();

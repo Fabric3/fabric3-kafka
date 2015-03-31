@@ -9,23 +9,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
+import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.fabric3.api.MonitorChannel;
-import org.fabric3.api.annotation.monitor.Monitor;
+import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.fabric3.api.host.Fabric3Exception;
+import org.fabric3.api.host.runtime.HostInfo;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
 import org.fabric3.binding.kafka.provision.KafkaConnectionTarget;
 import org.fabric3.spi.container.builder.component.DirectConnectionFactory;
 import org.fabric3.spi.container.channel.ChannelConnection;
+import org.fabric3.spi.container.component.Component;
+import org.fabric3.spi.container.component.ComponentManager;
+import org.fabric3.spi.container.component.ScopedComponent;
 import org.fabric3.spi.runtime.event.EventService;
 import org.fabric3.spi.runtime.event.RuntimeStart;
+import org.fabric3.spi.util.Cast;
 import org.oasisopen.sca.annotation.Destroy;
 import org.oasisopen.sca.annotation.EagerInit;
 import org.oasisopen.sca.annotation.Init;
@@ -44,13 +53,16 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
     private Map<URI, Map<URI, ConsumerConnector>> connectors = new HashMap<>();
 
     @Reference
+    protected HostInfo info;
+
+    @Reference
+    protected ComponentManager cm;
+
+    @Reference
     protected EventService eventService;
 
     @Reference
     protected ExecutorService executorService;
-
-    @Monitor
-    protected MonitorChannel monitor;
 
     private List<Runnable> queuedSubscriptions = new ArrayList<>();
 
@@ -87,7 +99,7 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
     public <T> T createDirectConsumer(Class<T> type, KafkaConnectionSource source) {
         if (ConsumerConnector.class.isAssignableFrom(type)) {
             Map<URI, ConsumerConnector> map = connectors.computeIfAbsent(source.getChannelUri(), (s) -> new HashMap());
-            return type.cast(map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumerConnector(source)));
+            return type.cast(map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumer(source)));
         } else {
             throw new Fabric3Exception("Invalid consumer type: " + type.getName());
         }
@@ -99,12 +111,17 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
         releaseConsumer(channelUri, consumerUri, true);
     }
 
+    @SuppressWarnings("unchecked")
     public void subscribe(KafkaConnectionSource source, ChannelConnection connection) {
         String topic = source.getTopic() != null ? source.getTopic() : source.getDefaultTopic();
         Map<URI, ConsumerConnector> map = connectors.computeIfAbsent(source.getChannelUri(), (s) -> new HashMap());
-        ConsumerConnector consumer = map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumerConnector(source));
+        ConsumerConnector consumer = map.computeIfAbsent(source.getConsumerUri(), (s) -> createConsumer(source));
 
-        ConsumerIterator iterator = consumer.createMessageStreams(Collections.singletonMap(topic, 1)).get(topic).get(0).iterator();
+        Decoder keyDecoder = createDeserializer(source.getKeyDeserializer());
+        Decoder valueDecoder = createDeserializer(source.getValueDeserializer());
+
+        Map<String, List<KafkaStream<?, ?>>> streams = consumer.createMessageStreams(Collections.singletonMap(topic, 1), keyDecoder, valueDecoder);
+        ConsumerIterator iterator = streams.get(topic).get(0).iterator();
         executorService.submit(() -> {
             while (iterator.hasNext()) {
                 connection.getEventStream().getHeadHandler().handle(String.valueOf(iterator.next()), false);
@@ -132,11 +149,18 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
 
     @SuppressWarnings("unchecked")
     private Holder<Producer> createProducer(KafkaConnectionTarget target) {
-        return new Holder(new KafkaProducer<>(target.getConfiguration()));
+        Map<String, Object> configuration = target.getConfiguration();
+        Serializer keySerializer = createSerializer(target.getKeySerializer());
+        Serializer valueSerializer = createSerializer(target.getValueSerializer());
+        return new Holder<>(new KafkaProducer<>(configuration, keySerializer, valueSerializer));
+    }
+
+    private Serializer createSerializer(String name) {
+        return name == null ? new StringSerializer() : new SerializerWrapper(Cast.cast(getInstance(name)));
     }
 
     @SuppressWarnings("unchecked")
-    private ConsumerConnector createConsumerConnector(KafkaConnectionSource source) {
+    private ConsumerConnector createConsumer(KafkaConnectionSource source) {
         Properties properties = new Properties();
         properties.putAll(source.getConfiguration());
         ConsumerConfig config = new ConsumerConfig(properties);
@@ -171,6 +195,27 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
             producers.remove(channelUri);
         }
         return holder.delegate;
+    }
+
+    private Decoder createDeserializer(String name) {
+        return name == null ? new DefaultDecoder(null) : new DeserializerWrapper(Cast.cast(getInstance(name)));
+    }
+
+    private Function getInstance(String name) {
+        URI serializerUri = URI.create(info.getDomain().toString() + "/" + name);
+        Component component = cm.getComponent(serializerUri);
+        if (component == null) {
+            throw new Fabric3Exception("Component not found: " + name);
+        }
+        if (!(component instanceof ScopedComponent)) {
+            throw new Fabric3Exception("Component must be a Java component: " + name);
+        }
+        ScopedComponent scopedComponent = (ScopedComponent) component;
+        Object instance = scopedComponent.getInstance();
+        if (!(instance instanceof Function)) {
+            throw new Fabric3Exception("Serializer must implement: " + Function.class.getName());
+        }
+        return (Function) instance;
     }
 
     private class Holder<T> {

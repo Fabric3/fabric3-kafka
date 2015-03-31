@@ -11,11 +11,15 @@ import org.fabric3.spi.model.physical.PhysicalConnectionTarget;
 public class KafkaConnectionTarget extends PhysicalConnectionTarget {
     private URI channelUri;
     private String defaultTopic;
+    private final String keySerializer;
+    private final String valueSerializer;
     private Map<String, Object> configuration;
 
-    public KafkaConnectionTarget(URI channelUri, String defaultTopic, Map<String, Object> configuration) {
+    public KafkaConnectionTarget(URI channelUri, String defaultTopic, String keySerializer, String valueSerializer, Map<String, Object> configuration) {
         this.channelUri = channelUri;
         this.defaultTopic = defaultTopic;
+        this.keySerializer = keySerializer;
+        this.valueSerializer = valueSerializer;
         this.configuration = configuration;
     }
 
@@ -25,6 +29,14 @@ public class KafkaConnectionTarget extends PhysicalConnectionTarget {
 
     public String getDefaultTopic() {
         return defaultTopic;
+    }
+
+    public String getKeySerializer() {
+        return keySerializer;
+    }
+
+    public String getValueSerializer() {
+        return valueSerializer;
     }
 
     public Map<String, Object> getConfiguration() {
