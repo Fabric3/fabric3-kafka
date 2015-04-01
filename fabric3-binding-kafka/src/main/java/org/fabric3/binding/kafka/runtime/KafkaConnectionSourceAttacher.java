@@ -17,12 +17,12 @@ public class KafkaConnectionSourceAttacher implements SourceConnectionAttacher<K
     protected KafkaConnectionManager connectionManager;
 
     public void attach(KafkaConnectionSource source, PhysicalConnectionTarget target, ChannelConnection connection) {
+        connection.setCloseable(() -> connectionManager.releaseConsumer(source));
         if (target.isDirectConnection()) {
             Class<?> type = target.getServiceInterface();
             connectionManager.createDirectConsumer(type, source); // create consumer, which will be returned by the direct connection factory
         } else {
             connectionManager.subscribe(source, connection);
-            connection.getEventStream().setCloseable(() -> connectionManager.releaseConsumer(source));
         }
     }
 

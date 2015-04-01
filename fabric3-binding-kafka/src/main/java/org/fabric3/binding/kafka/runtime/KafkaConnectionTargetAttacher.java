@@ -24,7 +24,7 @@ public class KafkaConnectionTargetAttacher implements TargetConnectionAttacher<K
         if (!source.isDirectConnection()) {
             String topic = target.getTopic() != null ? target.getTopic(): target.getDefaultTopic();
             connection.getEventStream().addHandler((event, batch) -> producer.send(new ProducerRecord(topic, event)));
-            connection.getEventStream().setCloseable(()->connectionManager.releaseProducer(target.getChannelUri()));
+            connection.setCloseable(()->connectionManager.releaseProducer(target.getChannelUri()));
         }
     }
 

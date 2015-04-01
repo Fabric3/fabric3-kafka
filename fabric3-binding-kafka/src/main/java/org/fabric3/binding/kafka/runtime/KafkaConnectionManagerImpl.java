@@ -128,7 +128,7 @@ public class KafkaConnectionManagerImpl implements KafkaConnectionManager, Direc
             }
         });
         // set the closeable callback
-        connection.getEventStream().setCloseable(() -> releaseConsumer(source));
+        connection.setCloseable(() -> releaseConsumer(source));
     }
 
     @SuppressWarnings("unchecked")
