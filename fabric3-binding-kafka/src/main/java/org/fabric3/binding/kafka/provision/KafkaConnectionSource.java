@@ -34,7 +34,7 @@ public class KafkaConnectionSource extends PhysicalConnectionSource {
     }
 
     public String getSourceId() {
-        return channelUri + "_Nats_source";
+        return channelUri + "_Kafka_source";
     }
 
     public URI getChannelUri() {
