@@ -31,7 +31,7 @@ public class KafkaConnectionBindingGenerator implements ConnectionBindingGenerat
         String keyDeserializer = kafkaBinding.getKeyDeserializer();
         String valueDeserializer = kafkaBinding.getValueDeserializer();
         Map<String, Object> configuration = kafkaBinding.getConfiguration();
-        return new KafkaConnectionSource(channelUri, consumerUri, defaultTopic, keyDeserializer, valueDeserializer, configuration);
+        return new KafkaConnectionSource(consumerUri, channelUri, consumerUri, defaultTopic, keyDeserializer, valueDeserializer, configuration);
 
     }
 
@@ -42,6 +42,6 @@ public class KafkaConnectionBindingGenerator implements ConnectionBindingGenerat
         Map<String, Object> configuration = kafkaBinding.getConfiguration();
         URI channelUri = binding.getParent().getUri();
         String defaultTopic = kafkaBinding.getDefaultTopic();
-        return new KafkaConnectionTarget(channelUri, defaultTopic, keySerializer, valueSerializer, configuration);
+        return new KafkaConnectionTarget(producer.getUri(), channelUri, defaultTopic, keySerializer, valueSerializer, configuration);
     }
 }

@@ -15,7 +15,13 @@ public class KafkaConnectionTarget extends PhysicalConnectionTarget {
     private final String valueSerializer;
     private Map<String, Object> configuration;
 
-    public KafkaConnectionTarget(URI channelUri, String defaultTopic, String keySerializer, String valueSerializer, Map<String, Object> configuration) {
+    public KafkaConnectionTarget(URI uri,
+                                 URI channelUri,
+                                 String defaultTopic,
+                                 String keySerializer,
+                                 String valueSerializer,
+                                 Map<String, Object> configuration) {
+        setUri(uri);
         this.channelUri = channelUri;
         this.defaultTopic = defaultTopic;
         this.keySerializer = keySerializer;

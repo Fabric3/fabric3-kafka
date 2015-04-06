@@ -17,18 +17,24 @@ public class KafkaConnectionSource extends PhysicalConnectionSource {
 
     private Map<String, Object> configuration;
 
-    public KafkaConnectionSource(URI channelUri,
+    public KafkaConnectionSource(URI uri,
+                                 URI channelUri,
                                  URI consumerUri,
                                  String defaultTopic,
                                  String keyDeserializer,
                                  String valueDeserializer,
                                  Map<String, Object> configuration) {
+        setUri(uri);
         this.channelUri = channelUri;
         this.consumerUri = consumerUri;
         this.defaultTopic = defaultTopic;
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
         this.configuration = configuration;
+    }
+
+    public String getSourceId() {
+        return channelUri + "_Nats_source";
     }
 
     public URI getChannelUri() {
