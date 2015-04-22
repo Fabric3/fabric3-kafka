@@ -7,7 +7,7 @@ import org.fabric3.api.annotation.wire.Key;
 import org.fabric3.api.binding.kafka.model.KafkaBinding;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
 import org.fabric3.binding.kafka.provision.KafkaConnectionTarget;
-import org.fabric3.spi.domain.generator.channel.ConnectionBindingGenerator;
+import org.fabric3.spi.domain.generator.ConnectionBindingGenerator;
 import org.fabric3.spi.model.instance.LogicalBinding;
 import org.fabric3.spi.model.instance.LogicalConsumer;
 import org.fabric3.spi.model.instance.LogicalProducer;
