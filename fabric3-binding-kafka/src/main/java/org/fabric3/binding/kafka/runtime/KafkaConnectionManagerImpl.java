@@ -27,7 +27,7 @@ import org.fabric3.api.host.Fabric3Exception;
 import org.fabric3.api.host.runtime.HostInfo;
 import org.fabric3.binding.kafka.provision.KafkaConnectionSource;
 import org.fabric3.binding.kafka.provision.KafkaConnectionTarget;
-import org.fabric3.spi.container.builder.component.DirectConnectionFactory;
+import org.fabric3.spi.container.builder.DirectConnectionFactory;
 import org.fabric3.spi.container.channel.ChannelConnection;
 import org.fabric3.spi.container.component.Component;
 import org.fabric3.spi.container.component.ComponentManager;
